@@ -14,6 +14,15 @@ import numba
 from typing import Tuple, Dict, Optional
 from dataclasses import dataclass
 
+from .constants import (
+    DEFAULT_TRADE_PROBABILITY,
+    DEFAULT_ADD_PROBABILITY, 
+    DEFAULT_CANCEL_ALPHA,
+    DEFAULT_CANCEL_BETA,
+    DEFAULT_TRADE_AGGRESSION,
+    PRICE_EPSILON
+)
+
 
 @dataclass
 class VolumeChange:
@@ -53,11 +62,11 @@ class MicrostructureParams:
         trade_aggression: How aggressive trades are (0=passive, 1=aggressive)
                          Affects how deep into book trades go
     """
-    trade_probability: float = 0.7  # 70% of decreases are trades
-    add_probability: float = 0.6    # 60% of increases are new orders
-    cancel_loc_alpha: float = 2.0   # Cancels slightly favor front
-    cancel_loc_beta: float = 3.0    # But more cancels at back
-    trade_aggression: float = 0.8   # Trades are fairly aggressive
+    trade_probability: float = DEFAULT_TRADE_PROBABILITY
+    add_probability: float = DEFAULT_ADD_PROBABILITY
+    cancel_loc_alpha: float = DEFAULT_CANCEL_ALPHA
+    cancel_loc_beta: float = DEFAULT_CANCEL_BETA
+    trade_aggression: float = DEFAULT_TRADE_AGGRESSION
 
 
 class MicrostructureModel:
@@ -284,7 +293,7 @@ class MicrostructureModel:
             ]
 
         for p, v in zip(prices, volumes):
-            if abs(p - price) < 1e-9:
+            if abs(p - price) < PRICE_EPSILON:
                 return float(v)
 
         return 0.0

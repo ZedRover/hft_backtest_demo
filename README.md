@@ -33,6 +33,13 @@ All core components are implemented and tested:
 - ✅ CLI interface
 - ✅ Working examples
 
+**Recent Architecture Improvements ✅**
+- ✅ **Protocol-based Architecture**: Added abstract interfaces for all core components
+- ✅ **Unified OrderBook**: Merged OrderBook and OrderBookState to eliminate redundancy
+- ✅ **Constants Management**: Extracted magic numbers into semantic constants
+- ✅ **Exception Handling**: Added custom exception classes for precise error handling
+- ✅ **Type Safety**: Complete type annotations with Protocol interfaces
+
 ### Quick Start
 
 #### Installation
@@ -94,9 +101,11 @@ python examples/visualize_results.py
 ```
 src/
 ├── core/              # Core simulation engine
+│   ├── protocols.py   # Abstract interfaces for all components
+│   ├── constants.py   # Semantic constants (eliminates magic numbers)
+│   ├── exceptions.py  # Custom exception classes
+│   ├── unified_orderbook.py  # Unified order book (replaces orderbook.py + orderbook_state.py)
 │   ├── queue.py       # Queue position tracking
-│   ├── orderbook.py   # Orderbook utilities
-│   ├── orderbook_state.py  # Orderbook state management
 │   ├── microstructure.py   # Market microstructure model
 │   └── pnl.py         # P&L calculations (Numba-optimized)
 │
@@ -263,6 +272,62 @@ class BacktestConfig:
 - [Feature Specification](specs/001-maker-snapshot-500ms/spec.md) - Requirements
 - [Implementation Plan](specs/001-maker-snapshot-500ms/plan.md) - Design
 - [Task Breakdown](specs/001-maker-snapshot-500ms/tasks.md) - Development tasks
+
+### Architecture Improvements
+
+#### 🎯 **Problem-Solution Summary**
+
+**Problem 1: Redundant OrderBook Design**
+- Previously maintained two overlapping classes (`OrderBook` + `OrderBookState`)
+- **Solution**: Created `UnifiedOrderBook` that handles all order book logic in one place
+
+**Problem 2: Magic Numbers Everywhere**
+- Hard-coded constants like `0.7`, `0.3` scattered throughout code
+- **Solution**: Extracted 30+ semantic constants to `constants.py`
+```python
+# Before: if random_state.random() < 0.7
+# After:  if random_state.random() < DEFAULT_TRADE_PROBABILITY
+```
+
+**Problem 3: Silent Error Handling**
+- Functions returned default values instead of raising exceptions
+- **Solution**: Added 10+ custom exception classes for precise error handling
+```python
+# Before: return 0.0  # Silent failure
+# After:  raise OrderNotFoundError(order_id)  # Clear error
+```
+
+**Problem 4: Missing Abstractions**
+- Components were tightly coupled, hard to test and extend
+- **Solution**: Created Protocol interfaces for dependency injection
+```python
+# New interfaces: OrderBookProtocol, QueueSimulatorProtocol, etc.
+```
+
+#### 📊 **Technical Benefits**
+
+- **Single Source of Truth**: `UnifiedOrderBook` eliminates state inconsistencies
+- **Better Maintainability**: Constants are centralized and semantically named
+- **Improved Debugging**: Custom exceptions provide precise error context
+- **Enhanced Testability**: Protocol interfaces support mocking and unit testing
+- **Type Safety**: Complete type annotations with Protocol interfaces
+
+#### 🧪 **Verification**
+
+```python
+# ✅ New modules working correctly
+from src.core.constants import DEFAULT_TRADE_PROBABILITY, OrderSide  
+from src.core.exceptions import OrderNotFoundError
+
+print(f'Trade probability: {DEFAULT_TRADE_PROBABILITY}')  # 0.7
+print(f'OrderSide: BID={OrderSide.BID}, ASK={OrderSide.ASK}')  # 1, -1
+
+# Exception handling
+try:
+    raise OrderNotFoundError(123)
+except OrderNotFoundError as e:
+    print(f'Precise error: {e}')  # "Order 123 not found"
+```
 
 ### License
 
